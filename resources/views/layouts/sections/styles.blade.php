@@ -7,7 +7,7 @@
   rel="stylesheet" />
 
 <!-- Fonts Icons -->
-@vite(['resources/assets/vendor/fonts/iconify/iconify.css'])
+@vite(['resources/assets/vendor/fonts/tabler-icons.scss', 'resources/assets/vendor/fonts/fontawesome.scss', 'resources/assets/vendor/fonts/flag-icons.scss'])
 
 <!-- BEGIN: Vendor CSS-->
 @vite(['resources/assets/vendor/libs/node-waves/node-waves.scss'])
