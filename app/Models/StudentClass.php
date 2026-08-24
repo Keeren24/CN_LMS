@@ -29,6 +29,11 @@ class StudentClass extends Model
         return $this->hasMany(Student::class, 'cn_class_id')->where('status', 'active');
     }
 
+    public function branch_info()
+    {
+        return $this->belongsTo(Branch::class, 'branch_id', 'id');
+    }
+
     public function sessions()
     {
         return $this->hasMany(ClassSession::class, 'student_class_id');

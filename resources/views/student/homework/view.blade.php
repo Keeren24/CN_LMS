@@ -8,7 +8,9 @@
   {{-- Header --}}
   <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
     <div>
-      <h4 class="mb-0">{{ $homework->title }}</h4>
+      <h4 class="mb-0">
+        @if ($homework->week_number) Week {{ $homework->week_number }} — @endif{{ $homework->title }}
+      </h4>
       <p class="text-muted small mb-0">
         {{ $homework->questions->count() }} question(s) &middot;
         {{ $homework->questions->sum('marks') }} total marks

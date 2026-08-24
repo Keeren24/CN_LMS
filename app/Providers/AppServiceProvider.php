@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Vite;
+use Illuminate\Support\Facades\View;
+use App\Services\Scheduling\ClassAlertService;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -20,6 +22,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        View::composer(['student.dashboard', 'student.calendar'], function ($view) {
+            $view->with('classAlerts', app(ClassAlertService::class)->forStudent(auth()->user()));
+        });
+
         Vite::useStyleTagAttributes(function (?string $src, string $url, ?array $chunk, ?array $manifest) {
             if ($src !== null) {
                 return [

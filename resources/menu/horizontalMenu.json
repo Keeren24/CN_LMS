@@ -19,10 +19,22 @@
       "slug": "student.attendance"
     },
     {
+      "url": "/calendar",
+      "name": "My Calendar",
+      "icon": "menu-icon icon-base ti ti-calendar",
+      "slug": "student.calendar"
+    },
+    {
       "url": "/class-points",
       "name": "Class Leaderboard",
       "icon": "menu-icon icon-base ti ti-trophy",
       "slug": "student.class-points"
+    },
+    {
+      "url": "/marketplace",
+      "name": "Marketplace",
+      "icon": "menu-icon icon-base ti ti-shopping-bag",
+      "slug": "student.marketplace"
     }
   ]
 }

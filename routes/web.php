@@ -7,6 +7,8 @@ use App\Http\Controllers\Student\SubmissionController;
 use App\Http\Controllers\Student\AttendanceController;
 use App\Http\Controllers\Student\ClassPointsController;
 use App\Http\Controllers\Student\DashboardController;
+use App\Http\Controllers\Student\CalendarController;
+use App\Http\Controllers\Student\MarketplaceController;
 use App\Http\Controllers\language\LanguageController;
 use App\Http\Controllers\dashboard\Analytics;
 use App\Http\Controllers\dashboard\Crm;
@@ -185,8 +187,16 @@ Route::middleware(['auth', 'student'])->group(function () {
     // ── Attendance ───────────────────────────────────
     Route::get('/attendance', [AttendanceController::class, 'index'])->name('student.attendance');
 
+    // ── Calendar ──────────────────────────────────────
+    Route::get('/calendar', [CalendarController::class, 'index'])->name('student.calendar');
+    Route::get('/calendar/events', [CalendarController::class, 'events'])->name('student.calendar.events');
+
     // ── Class Points ─────────────────────────────────
     Route::get('/class-points', [ClassPointsController::class, 'index'])->name('student.class-points');
+
+    // ── Marketplace ───────────────────────────────────
+    Route::get('/marketplace', [MarketplaceController::class, 'index'])->name('student.marketplace');
+    Route::post('/marketplace/{item}/redeem', [MarketplaceController::class, 'redeem'])->name('student.marketplace.redeem');
 });
 
 // ─── Locale ───────────────────────────────────────────────────────────────────

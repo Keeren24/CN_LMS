@@ -12,6 +12,8 @@
 
 @section('content')
 
+    @include('student.partials.class-alerts')
+
     {{-- ── Welcome Banner ────────────────────────────────────────────────────── --}}
     <div class="card border-0 mb-4 overflow-hidden position-relative"
          style="background: linear-gradient(135deg, #0093E9 0%, #00bf8f 100%); min-height: 140px;">

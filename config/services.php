@@ -35,4 +35,11 @@ return [
         ],
     ],
 
+    /*
+    | The centre's home state — used when a screen isn't scoped to a branch.
+    */
+    'holidays' => [
+        'default_state' => env('HOLIDAY_DEFAULT_STATE', 'Penang'),
+    ],
+
 ];

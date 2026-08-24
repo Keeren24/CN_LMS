@@ -1742,6 +1742,13 @@
   resolved "https://registry.npmjs.org/@fullcalendar/list/-/list-6.1.17.tgz"
   integrity sha512-fkyK49F9IxwlGUBVhJGsFpd/LTi/vRVERLIAe1HmBaGkjwpxnynm8TMLb9mZip97wvDk3CmZWduMe6PxscAlow==
 
+"@fullcalendar/multimonth@^6.1.17":
+  version "6.1.17"
+  resolved "https://registry.npmjs.org/@fullcalendar/multimonth/-/multimonth-6.1.17.tgz"
+  integrity sha512-ZxA9mkTzKayCdxR5je9P9++qqhSeSbuvXmvZ6doZw6omv8K52cD7XJii+P7gvxATXxtI6hg4i+DuMyOHxP1E2g==
+  dependencies:
+    "@fullcalendar/daygrid" "~6.1.17"
+
 "@fullcalendar/premium-common@~6.1.17":
   version "6.1.17"
   resolved "https://registry.npmjs.org/@fullcalendar/premium-common/-/premium-common-6.1.17.tgz"
