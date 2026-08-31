@@ -9,6 +9,7 @@ use App\Http\Controllers\Student\ClassPointsController;
 use App\Http\Controllers\Student\DashboardController;
 use App\Http\Controllers\Student\CalendarController;
 use App\Http\Controllers\Student\MarketplaceController;
+use App\Http\Controllers\Student\IdeController;
 use App\Http\Controllers\language\LanguageController;
 use App\Http\Controllers\dashboard\Analytics;
 use App\Http\Controllers\dashboard\Crm;
@@ -197,6 +198,21 @@ Route::middleware(['auth', 'student'])->group(function () {
     // ── Marketplace ───────────────────────────────────
     Route::get('/marketplace', [MarketplaceController::class, 'index'])->name('student.marketplace');
     Route::post('/marketplace/{item}/redeem', [MarketplaceController::class, 'redeem'])->name('student.marketplace.redeem');
+
+    // ── Code Editor (IDE) ────────────────────────────
+    Route::get   ('/ide',                              [IdeController::class, 'index'])       ->name('student.ide.index');
+    Route::post  ('/ide/projects',                      [IdeController::class, 'store'])       ->name('student.ide.store');
+    Route::get   ('/ide/projects/{project}',             [IdeController::class, 'edit'])        ->middleware('coi')->name('student.ide.edit');
+    Route::delete('/ide/projects/{project}',             [IdeController::class, 'destroy'])     ->name('student.ide.destroy');
+    Route::get   ('/ide/projects/{project}/files',       [IdeController::class, 'files'])       ->name('student.ide.files');
+    Route::get   ('/ide/projects/{project}/file',        [IdeController::class, 'fileContent']) ->name('student.ide.file.show');
+    Route::put   ('/ide/projects/{project}/file',        [IdeController::class, 'saveFile'])    ->name('student.ide.file.save');
+    Route::post  ('/ide/projects/{project}/file',        [IdeController::class, 'createFile'])  ->name('student.ide.file.create');
+    Route::patch ('/ide/projects/{project}/file',        [IdeController::class, 'renameFile'])  ->name('student.ide.file.rename');
+    Route::delete('/ide/projects/{project}/file',        [IdeController::class, 'deleteFile'])  ->name('student.ide.file.delete');
+    Route::get   ('/ide/projects/{project}/snapshots',   [IdeController::class, 'snapshots'])   ->name('student.ide.snapshots');
+    Route::post  ('/ide/projects/{project}/snapshots',   [IdeController::class, 'snapshot'])    ->name('student.ide.snapshot');
+    Route::post  ('/ide/projects/{project}/restore/{snapshot}', [IdeController::class, 'restore'])->name('student.ide.restore');
 });
 
 // ─── Locale ───────────────────────────────────────────────────────────────────
