@@ -1,13 +1,42 @@
 'use strict';
 
-import { createEditor, languageForPath, monaco } from './ide/monaco-setup.js';
-import { FileTree } from './ide/file-tree.js';
-import { IdeApi } from './ide/api.js';
-import { WebRunner } from './ide/web-runner.js';
+// Below this width the toolbar and output panel don't fit — matches the
+// `.ide-mobile-block` CSS gate in editor.blade.php. Kept as a dynamic
+// import (not a static top-level one) specifically so a blocked visitor
+// never pays for downloading Monaco/xterm/Pyodide-adjacent code at all —
+// a static import would already be fetched and evaluated by the time any
+// runtime check here could run.
+const IDE_MIN_WIDTH = 992;
 
-document.addEventListener('DOMContentLoaded', async function () {
+document.addEventListener('DOMContentLoaded', function () {
     const root = document.getElementById('ideRoot');
     if (!root) return;
+
+    // The width gate only exists to skip paying for Monaco/xterm/Pyodide on
+    // a phone-sized viewport — it must stay reactive to resize, not just
+    // checked once here. Otherwise a page that first rendered under a
+    // narrow viewport (e.g. DevTools' device toolbar) would never boot even
+    // after the viewport widens back out, leaving the loading overlay
+    // stuck forever since nothing else re-triggers initialization.
+    let booted = false;
+    function tryBoot() {
+        if (booted || window.innerWidth < IDE_MIN_WIDTH) return;
+        booted = true;
+        window.removeEventListener('resize', tryBoot);
+        bootIde(root);
+    }
+
+    tryBoot();
+    window.addEventListener('resize', tryBoot);
+});
+
+async function bootIde(root) {
+    const [{ createEditor, languageForPath, monaco }, { FileTree }, { IdeApi }, { WebRunner }] = await Promise.all([
+        import('./ide/monaco-setup.js'),
+        import('./ide/file-tree.js'),
+        import('./ide/api.js'),
+        import('./ide/web-runner.js'),
+    ]);
 
     const config = JSON.parse(root.dataset.config);
     const projectUrl = config.projectUrl;
@@ -507,4 +536,4 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         stopBtn.addEventListener('click', () => runner.stop());
     }
-});
+}

@@ -95,10 +95,17 @@
         #idePyFigures { flex: 0 0 auto; max-height: 42vh; overflow-y: auto; background: #16161f; border-top: 1px solid rgba(255,255,255,0.08); padding: 0.5rem; display: none; }
         #idePyFigures:has(.ide-figure) { display: block; }
         .ide-figure { display: block; width: auto; max-width: 100%; max-height: 38vh; object-fit: contain; margin-inline: auto; }
+        /* The 3-panel layout (file tree + editor + output) and the toolbar
+           (6 unwrapped buttons) were never designed for narrow viewports —
+           below this, the toolbar clips and the output panel becomes
+           unreachable rather than gracefully reflowing. Block outright
+           instead of shipping a half-broken editor; matches the breakpoint
+           the rest of this template already treats as "not desktop"
+           (Bootstrap's lg). */
+        .ide-mobile-block { display: none; }
         @media (max-width: 991.98px) {
-            .ide-body { flex-direction: column; }
-            .ide-sidebar { width: 100%; max-height: 140px; }
-            .ide-output { width: 100%; border-inline-start: none; border-top: 1px solid var(--bs-border-color); min-height: 260px; }
+            .ide-shell { display: none; }
+            .ide-mobile-block { display: flex; }
         }
     </style>
 @endsection
@@ -121,6 +128,18 @@
             </span>
         </div>
         <span id="ideSaveStatus" class="small text-muted">All changes saved</span>
+    </div>
+
+    <div class="ide-mobile-block flex-column align-items-center text-center py-5">
+        <i class="ti ti-device-desktop ti-lg text-muted mb-3" style="font-size: 3rem;"></i>
+        <h5 class="mb-2">Code Editor needs a bigger screen</h5>
+        <p class="text-muted mb-3" style="max-width: 360px;">
+            The editor, file tree, and output panel don't fit well on a phone-sized screen.
+            Please switch to a tablet or a desktop/laptop to continue working on this project.
+        </p>
+        <a href="{{ route('student.ide.index') }}" class="btn btn-outline-primary btn-sm">
+            <i class="ti ti-arrow-left me-1"></i>Back to Code Editor
+        </a>
     </div>
 
     @php
