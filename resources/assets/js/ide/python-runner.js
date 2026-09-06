@@ -16,13 +16,14 @@ export class PythonRunner {
         this.worker = null;
         this.ready = false;
         this.running = false;
-        this.sab = typeof SharedArrayBuffer !== 'undefined' ? new SharedArrayBuffer(STDIN_HEADER_BYTES + STDIN_MAX_BYTES) : null;
+        const isolated = typeof SharedArrayBuffer !== 'undefined';
+        this.sab = isolated ? new SharedArrayBuffer(STDIN_HEADER_BYTES + STDIN_MAX_BYTES) : null;
         // Lets stop() raise a real KeyboardInterrupt inside the running script
         // (via pyodide.setInterruptBuffer in the worker) instead of always
         // terminating and reloading the whole Pyodide runtime — same
         // cross-origin-isolation requirement as the stdin SharedArrayBuffer
         // above, so it's gated the same way.
-        this.interruptBuffer = typeof SharedArrayBuffer !== 'undefined' ? new Int32Array(new SharedArrayBuffer(4)) : null;
+        this.interruptBuffer = isolated ? new Int32Array(new SharedArrayBuffer(4)) : null;
 
         this.term = new Terminal({
             convertEol: true,
@@ -206,7 +207,10 @@ export class PythonRunner {
             // Atomics.wait inside the worker's syncStdin() — the interrupt
             // can't be checked until that wait returns, so release it with
             // an empty line to let the pending interrupt land right after.
-            if (this.awaitingInput) this._submitStdin('');
+            if (this.awaitingInput) {
+                this._submitStdin('');
+                this.awaitingInput = false;
+            }
             this.term.writeln('\r\n\x1b[33m--- interrupting ---\x1b[0m');
 
             // Safety net: some C-level calls never check back in with the

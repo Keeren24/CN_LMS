@@ -30,7 +30,7 @@
             @php
                 $icon = isset($item->icon) ? trim(preg_replace('/\s+/', ' ', str_replace(['menu-icon', 'icon-base'], '', $item->icon))) : 'ti ti-circle';
                 $slug = $item->slug ?? null;
-                $isActive = $slug && is_string($slug) && $currentRoute && ($currentRoute === $slug || str_starts_with($currentRoute, $slug));
+                $isActive = $slug && is_string($slug) && $currentRoute && $currentRoute === $slug;
             @endphp
             <a class="bottom-nav-item {{ $isActive ? 'active' : '' }}"
                href="{{ isset($item->url) ? url($item->url) : 'javascript:void(0);' }}">

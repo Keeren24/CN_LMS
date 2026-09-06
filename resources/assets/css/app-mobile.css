@@ -27,7 +27,10 @@ button,
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 1035;
+  /* Above .drag-target (z-index: 1036, vendor _layout.scss) so its
+     full-height left edge swipe strip doesn't swallow taps on the
+     leftmost bottom-nav item. */
+  z-index: 1037;
   display: flex;
   align-items: stretch;
   height: calc(var(--cnl-bottom-nav-height) + env(safe-area-inset-bottom));
