@@ -1,0 +1,27 @@
+/*
+ * Newer template markup uses "tabler-*" icon classes (e.g. tabler-menu-2),
+ * which only render via iconify.css's CSS-mask icons (--svg custom property).
+ * iconify.css also redefines the shared ".ti" base rule using masks, which
+ * collides with tabler-icons.scss's font-based ".ti" rule and breaks every
+ * old-style "ti-*" icon (they'd render as solid squares instead of glyphs).
+ * Re-scoping the mask application to elements that actually carry a
+ * "tabler-*" class keeps both icon systems working side by side.
+ */
+.ti[class*="tabler-"] {
+  background-color: currentColor;
+  -webkit-mask-image: var(--svg);
+  mask-image: var(--svg);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+}
+
+/* Undo iconify.css's blanket ".ti { background-color: currentColor }" for
+   old-style "ti-*" icons — without this, the background paints the same
+   color as the font glyph itself, hiding it as an invisible silhouette. */
+.ti:not([class*="tabler-"]) {
+  background-color: transparent;
+  -webkit-mask-image: none;
+  mask-image: none;
+}

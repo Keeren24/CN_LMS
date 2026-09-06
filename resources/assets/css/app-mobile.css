@@ -1,0 +1,191 @@
+/* ==========================================================================
+   Student Portal - mobile UX enhancements
+   Loaded on all standard (non-front) layouts. Desktop (>= xl) is unaffected
+   except for universally-safe touch tweaks.
+   ========================================================================== */
+
+:root {
+  --cnl-bottom-nav-height: 60px;
+}
+
+/* Remove tap highlight flash and the 300ms delay on touch devices. */
+a,
+button,
+.btn,
+.nav-link,
+.menu-link,
+.bottom-nav-item {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* --------------------------------------------------------------------------
+   Mobile bottom navigation
+   -------------------------------------------------------------------------- */
+.app-bottom-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  /* Above .drag-target (z-index: 1036, vendor _layout.scss) so its
+     full-height left edge swipe strip doesn't swallow taps on the
+     leftmost bottom-nav item. */
+  z-index: 1037;
+  display: flex;
+  align-items: stretch;
+  height: calc(var(--cnl-bottom-nav-height) + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom);
+  background: #fff;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 -2px 14px rgba(0, 0, 0, 0.06);
+}
+
+.app-bottom-nav .bottom-nav-item {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 6px 4px;
+  text-decoration: none;
+  color: #697a8d;
+  font-size: 0.68rem;
+  font-weight: 500;
+  transition: color 0.15s ease;
+}
+
+.app-bottom-nav .bottom-nav-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 28px;
+  border-radius: 999px;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.app-bottom-nav .bottom-nav-icon i {
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.app-bottom-nav .bottom-nav-label {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-bottom-nav .bottom-nav-item.active {
+  color: #384551;
+  font-weight: 600;
+}
+
+.app-bottom-nav .bottom-nav-item.active .bottom-nav-icon {
+  background: var(--bs-primary);
+  color: #fff;
+}
+
+.app-bottom-nav .bottom-nav-item:active .bottom-nav-icon {
+  transform: scale(0.92);
+}
+
+/* Dark theme surface colours. */
+.dark-style .app-bottom-nav {
+  background: #2b2c40;
+  border-top-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 -2px 14px rgba(0, 0, 0, 0.3);
+}
+
+.dark-style .app-bottom-nav .bottom-nav-item {
+  color: #b6bee3;
+}
+
+.dark-style .app-bottom-nav .bottom-nav-item.active {
+  color: #fff;
+}
+
+/* Keep page content and the footer clear of the fixed bottom nav (mobile only). */
+@media (max-width: 1199.98px) {
+  .layout-page .content-wrapper {
+    padding-bottom: calc(var(--cnl-bottom-nav-height) + env(safe-area-inset-bottom));
+  }
+
+  /* Nudge Vuexy's floating "scroll to top" button above the bottom nav. */
+  .buy-now .btn-buy-now,
+  .scroll-to-top {
+    bottom: calc(var(--cnl-bottom-nav-height) + env(safe-area-inset-bottom) + 1rem) !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Notch / safe-area handling for the installed (standalone) app
+   -------------------------------------------------------------------------- */
+@media (display-mode: standalone) {
+  .layout-navbar.navbar {
+    padding-top: env(safe-area-inset-top);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Touch-friendly sizing on small screens
+   -------------------------------------------------------------------------- */
+@media (max-width: 767.98px) {
+  .form-control,
+  .form-select {
+    min-height: 42px;
+  }
+
+  /* Full-width primary actions read better on phones. */
+  .btn-block-mobile {
+    display: block;
+    width: 100%;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   DataTables: stack the toolbar (length / buttons / search) on phones so it
+   stops overflowing horizontally, and let the table scroll on its own.
+   -------------------------------------------------------------------------- */
+@media (max-width: 767.98px) {
+  .dataTables_wrapper .row {
+    row-gap: 0.5rem;
+  }
+
+  .dataTables_wrapper .dataTables_length,
+  .dataTables_wrapper .dataTables_filter,
+  .dataTables_wrapper .dt-buttons {
+    text-align: center;
+    justify-content: center;
+    float: none !important;
+    width: 100%;
+  }
+
+  .dataTables_wrapper .dataTables_filter {
+    margin-top: 0.25rem;
+  }
+
+  .dataTables_wrapper .dataTables_filter input {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .dataTables_wrapper .dt-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+  }
+
+  .dataTables_wrapper .dataTables_info,
+  .dataTables_wrapper .dataTables_paginate {
+    text-align: center;
+    float: none !important;
+  }
+
+  .dataTables_wrapper .dataTables_paginate {
+    margin-top: 0.5rem;
+  }
+}

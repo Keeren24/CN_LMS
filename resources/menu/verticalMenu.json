@@ -38,6 +38,12 @@
       "name": "Marketplace",
       "icon": "menu-icon icon-base ti ti-shopping-bag",
       "slug": "student.marketplace"
+    },
+    {
+      "url": "/ide",
+      "name": "Code Editor",
+      "icon": "menu-icon icon-base ti ti-code",
+      "slug": "student.ide.index"
     }
   ]
 }

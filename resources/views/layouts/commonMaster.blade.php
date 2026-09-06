@@ -68,6 +68,12 @@
   <!-- Favicon -->
   <link rel="icon" type="image/x-icon" href="{{ asset('assets/img/favicon/favicon.ico') }}" />
 
+  {{-- Critical, page-specific styles rendered before the main (Vite-served) --}}
+  {{-- stylesheet, so a page that needs the correct background painted --}}
+  {{-- immediately can avoid a flash while that stylesheet is still loading. --}}
+  {{-- Empty/unused on every page that doesn't define it. --}}
+  @yield('critical-style')
+
   <!-- Include Styles -->
   <!-- $isFront is used to append the front layout styles only on the front layout otherwise the variable will be blank -->
   @include('layouts/sections/styles' . $isFront)

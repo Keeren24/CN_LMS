@@ -89,4 +89,8 @@
   <div class="drag-target"></div>
   </div>
   <!-- / Layout wrapper -->
+
+  @if ($isMenu)
+    @include('layouts.sections.menu.bottomNav')
+  @endif
 @endsection
