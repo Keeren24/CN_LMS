@@ -23,9 +23,10 @@ return [
     | Pyodide
     |--------------------------------------------------------------------------
     |
-    | Pinned CDN version. A matching copy should also be mirrored into
-    | public/vendor/pyodide/ as an offline fallback (see resources/assets/js
-    | /ide-python.worker.js for the load order).
+    | Pinned CDN version, loaded directly from jsdelivr in
+    | resources/assets/js/ide/python.worker.js — there is no local/offline
+    | fallback if the CDN is unreachable; the worker just hits its 30s boot
+    | timeout in ide/python-runner.js and shows a connectivity error.
     |
     */
 

@@ -6,7 +6,13 @@
  * has no `import` statements.
  *
  * Message protocol (main thread -> worker):
- *   {type:'init', cdn, packages, sab}     load Pyodide + curated packages
+ *   {type:'init', cdn, packages, sab, interruptBuffer}
+ *                                          load Pyodide + curated packages.
+ *                                          interruptBuffer (Int32Array) lets
+ *                                          the main thread raise a real
+ *                                          KeyboardInterrupt via
+ *                                          pyodide.setInterruptBuffer instead
+ *                                          of terminating this worker.
  *   {type:'run', code}                    execute student code
  *
  * Message protocol (worker -> main thread):
@@ -43,7 +49,7 @@ function syncStdin() {
     return new TextDecoder().decode(bytes) + '\n';
 }
 
-async function init(cdn, packages, sharedBuffer) {
+async function init(cdn, packages, sharedBuffer, interruptBuffer) {
     sab = sharedBuffer || null;
 
     try {
@@ -55,6 +61,10 @@ async function init(cdn, packages, sharedBuffer) {
 
         if (sab) {
             pyodide.setStdin({ stdin: syncStdin });
+        }
+
+        if (interruptBuffer) {
+            pyodide.setInterruptBuffer(interruptBuffer);
         }
 
         if (packages && packages.length) {
@@ -148,7 +158,7 @@ async function run(code) {
 self.onmessage = function (e) {
     const msg = e.data;
     if (msg.type === 'init') {
-        init(msg.cdn, msg.packages, msg.sab);
+        init(msg.cdn, msg.packages, msg.sab, msg.interruptBuffer);
     } else if (msg.type === 'run') {
         run(msg.code);
     }

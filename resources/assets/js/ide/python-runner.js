@@ -17,6 +17,12 @@ export class PythonRunner {
         this.ready = false;
         this.running = false;
         this.sab = typeof SharedArrayBuffer !== 'undefined' ? new SharedArrayBuffer(STDIN_HEADER_BYTES + STDIN_MAX_BYTES) : null;
+        // Lets stop() raise a real KeyboardInterrupt inside the running script
+        // (via pyodide.setInterruptBuffer in the worker) instead of always
+        // terminating and reloading the whole Pyodide runtime — same
+        // cross-origin-isolation requirement as the stdin SharedArrayBuffer
+        // above, so it's gated the same way.
+        this.interruptBuffer = typeof SharedArrayBuffer !== 'undefined' ? new Int32Array(new SharedArrayBuffer(4)) : null;
 
         this.term = new Terminal({
             convertEol: true,
@@ -101,7 +107,7 @@ export class PythonRunner {
             this.term.writeln(`\x1b[31mWorker error: ${e.message}\x1b[0m`);
             this.onStatusChange('error');
         };
-        this.worker.postMessage({ type: 'init', cdn: this.cdn, packages: this.packages, sab: this.sab });
+        this.worker.postMessage({ type: 'init', cdn: this.cdn, packages: this.packages, sab: this.sab, interruptBuffer: this.interruptBuffer });
     }
 
     /**
@@ -151,10 +157,12 @@ export class PythonRunner {
                 this._renderFigure(msg.dataUrl);
                 break;
             case 'done':
+                clearTimeout(this._stopFallbackTimeout);
                 this.running = false;
                 this.onStatusChange('ready');
                 break;
             case 'error':
+                clearTimeout(this._stopFallbackTimeout);
                 this.term.writeln(`\x1b[31m${msg.message}\x1b[0m`);
                 this.running = false;
                 this.onStatusChange('ready');
@@ -177,6 +185,7 @@ export class PythonRunner {
     run(code) {
         if (!this.ready || this.running) return;
 
+        clearTimeout(this._stopFallbackTimeout);
         if (this.figuresContainer) this.figuresContainer.innerHTML = '';
         this.term.clear();
         requestAnimationFrame(() => this.fitAddon.fit());
@@ -186,6 +195,39 @@ export class PythonRunner {
     }
 
     stop() {
+        if (this.interruptBuffer) {
+            // SIGINT is 2 (see Pyodide's interrupt-buffer protocol); the
+            // worker consumes it on its next Python bytecode step and resets
+            // it to 0 itself, raising a KeyboardInterrupt in the running
+            // script. This preserves the worker (packages, imports stay
+            // loaded) so the next Run is instant, unlike a full restart.
+            Atomics.store(this.interruptBuffer, 0, 2);
+            // A script blocked in input() is parked in the synchronous
+            // Atomics.wait inside the worker's syncStdin() — the interrupt
+            // can't be checked until that wait returns, so release it with
+            // an empty line to let the pending interrupt land right after.
+            if (this.awaitingInput) this._submitStdin('');
+            this.term.writeln('\r\n\x1b[33m--- interrupting ---\x1b[0m');
+
+            // Safety net: some C-level calls never check back in with the
+            // interpreter, so the interrupt can go unhandled. Fall back to a
+            // full restart if the script hasn't stopped shortly after.
+            clearTimeout(this._stopFallbackTimeout);
+            this._stopFallbackTimeout = setTimeout(() => {
+                if (!this.running) return; // interrupt already landed
+                this.term.writeln('\x1b[33mStill running — restarting the Python runtime...\x1b[0m');
+                this._hardStop();
+            }, 3000);
+            return;
+        }
+
+        // Not cross-origin isolated — no SharedArrayBuffer, so there's no
+        // way to signal the running script. Fall back to a full restart.
+        this._hardStop();
+    }
+
+    _hardStop() {
+        clearTimeout(this._stopFallbackTimeout);
         if (this.worker) this.worker.terminate();
         this.running = false;
         this.ready = false;
@@ -197,6 +239,7 @@ export class PythonRunner {
 
     destroy() {
         clearTimeout(this._bootTimeout);
+        clearTimeout(this._stopFallbackTimeout);
         if (this.worker) this.worker.terminate();
     }
 }
