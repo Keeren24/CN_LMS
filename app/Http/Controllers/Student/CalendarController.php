@@ -5,94 +5,73 @@ namespace App\Http\Controllers\Student;
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
 use App\Models\CalendarEvent;
-use App\Models\ClassAttendance;
 use App\Models\ClassSession;
 use App\Models\PublicHoliday;
-use App\Models\Student;
-use App\Models\StudentClass;
+use App\Services\Scheduling\StudentScheduleService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
+/**
+ * The student's schedule: class days, what happens to them, and how the
+ * child's attendance has gone. Every figure on the page comes from
+ * {@see StudentScheduleService}, so the calendar grid, the "coming up" list
+ * and the attendance stat cards can never disagree with one another.
+ */
 class CalendarController extends Controller
 {
+    public function __construct(private readonly StudentScheduleService $schedule)
+    {
+    }
+
     public function index()
     {
-        $class = $this->studentClass();
+        $studentId = Auth::user()->student_id ?? null;
+        $class = $this->schedule->currentClass($studentId);
+        $summary = $studentId ? $this->schedule->summary($studentId) : $this->emptySummary();
 
         return view('student.calendar', [
             'className' => $class?->name,
             'hasClass' => $class !== null,
+            'classInfo' => $class,
             'branches' => Branch::orderBy('name')->get(['id', 'name', 'color']),
             'branchColor' => $class?->branch_info?->colorTag() ?? '#16a34a',
+            'upcoming' => $studentId ? $this->schedule->upcoming($studentId) : [],
+            'summary' => $summary,
+            'recentMissed' => $this->recentMissed($summary),
         ]);
     }
 
     /** Read-only feed: the student's class sessions + their holidays + events. */
     public function events(Request $request): JsonResponse
     {
-        $startDate = substr((string) $request->query('start'), 0, 10);
-        $endDate = substr((string) $request->query('end'), 0, 10);
+        $start = substr((string) $request->query('start'), 0, 10);
+        $end = substr((string) $request->query('end'), 0, 10);
 
-        $class = $this->studentClass();
-        $state = $class ? ($class->branch_info->state ?? null) : null;
-        $state = $state ?: config('services.holidays.default_state');
+        if ($start === '' || $end === '') {
+            return response()->json([]);
+        }
 
-        $events = PublicHoliday::query()
-            ->whereBetween('date', [$startDate, $endDate])
-            ->applicableTo($state)
-            ->get()
+        $studentId = Auth::user()->student_id ?? null;
+        $class = $this->schedule->currentClass($studentId);
+
+        $events = $this->schedule
+            ->holidayDetails($class, $start, $end)
             ->map(fn (PublicHoliday $h) => $this->holidayEvent($h));
 
-        if ($class) {
-            $sessions = ClassSession::where('student_class_id', $class->id)
-                ->whereBetween('date', [$startDate, $endDate])
-                ->whereIn('status', [
-                    ClassSession::STATUS_SCHEDULED,
-                    ClassSession::STATUS_COMPLETED,
-                    ClassSession::STATUS_CANCELLED,
-                    ClassSession::STATUS_CENTER_BREAK,
-                ])
-                ->get();
+        if ($studentId) {
+            $days = $this->schedule->timetable($studentId, $start, $end);
 
-            $attendance = ClassAttendance::where('student_id', Auth::user()->student_id)
-                ->where('class_id', $class->id)
-                ->whereBetween('date', [$startDate, $endDate])
-                ->get()
-                ->mapWithKeys(fn ($a) => [$a->date->format('Y-m-d') => $a->status])
-                ->all();
-
-            $events = $events->concat($sessions->map(fn (ClassSession $s) => $this->sessionEvent($s, $class, $attendance)));
+            $events = $events->concat(
+                collect($days)->map(fn (array $day) => $this->sessionEvent($day))->values()
+            );
         }
 
-        $studentId = Auth::user()->student_id ?? null;
-        $classId = $class?->id;
-
-        $calendarEvents = CalendarEvent::whereDate('start_date', '<=', $endDate ?: $startDate)
-            ->where(function ($q) use ($startDate) {
-                $q->whereDate('end_date', '>=', $startDate)->orWhereDate('start_date', '>=', $startDate);
-            })
-            ->where(function ($q) use ($classId, $studentId) {
-                $q->whereDoesntHave('targets')
-                    ->orWhereHas('targets', fn ($t) => $t->where('target_type', 'class')->where('target_id', $classId))
-                    ->orWhereHas('targets', fn ($t) => $t->where('target_type', 'student')->where('target_id', $studentId));
-            })
-            ->get()
+        $centreEvents = $this->schedule
+            ->events($studentId ?? 0, $class, $start, $end)
             ->map(fn (CalendarEvent $e) => $this->calendarEvent($e));
 
-        return response()->json($events->concat($calendarEvents)->values()->all());
-    }
-
-    private function studentClass(): ?StudentClass
-    {
-        $studentId = Auth::user()->student_id ?? null;
-        if (! $studentId) {
-            return null;
-        }
-
-        $classId = Student::where('id', $studentId)->value('cn_class_id');
-
-        return $classId ? StudentClass::with('branch_info')->find($classId) : null;
+        return response()->json($events->concat($centreEvents)->values()->all());
     }
 
     private function holidayEvent(PublicHoliday $h): array
@@ -112,30 +91,25 @@ class CalendarController extends Controller
         ];
     }
 
-    private function sessionEvent(ClassSession $s, StudentClass $class, array $attendance = []): array
+    /** @param  array<string, mixed>  $day */
+    private function sessionEvent(array $day): array
     {
-        $branchColor = $class->branch_info?->colorTag() ?? '#16a34a';
-        $bg = match ($s->status) {
+        $bg = match ($day['status']) {
             ClassSession::STATUS_CANCELLED    => '#dc2626',
             ClassSession::STATUS_CENTER_BREAK => '#94a3b8',
-            default                           => $branchColor,
+            ClassSession::STATUS_HOLIDAY      => '#7c3aed',
+            default                           => $day['color'],
         };
 
-        $classNames = ['ev-session', 'ev-session-'.$s->status];
-        if (in_array($s->status, [ClassSession::STATUS_SCHEDULED, ClassSession::STATUS_COMPLETED], true)) {
-            $classNames[] = 'ev-branch-'.$class->branch_id;
+        $classNames = ['ev-session', 'ev-session-'.$day['status']];
+
+        if (in_array($day['status'], [ClassSession::STATUS_SCHEDULED, ClassSession::STATUS_COMPLETED], true)) {
+            $classNames[] = 'ev-branch-'.$day['branch_id'];
         }
 
-        $time = $s->start_time ? substr($s->start_time, 0, 5).'–'.substr($s->end_time, 0, 5) : '';
-        $title = match ($s->status) {
-            ClassSession::STATUS_CENTER_BREAK => 'No class (break)',
-            ClassSession::STATUS_CANCELLED    => 'Class cancelled',
-            default                           => trim($time.' '.$class->name),
-        };
-
         return [
-            'title' => $title,
-            'start' => $s->date->format('Y-m-d'),
+            'title' => $this->sessionTitle($day),
+            'start' => $day['date'],
             'allDay' => true,
             'sortPriority' => 2,
             'classNames' => $classNames,
@@ -144,11 +118,37 @@ class CalendarController extends Controller
             'textColor' => '#ffffff',
             'extendedProps' => [
                 'kind' => 'session',
-                'status' => $s->status,
-                'reason' => $s->reason,
-                'attendance' => $attendance[$s->date->format('Y-m-d')] ?? null,
+                'status' => $day['status'],
+                'reason' => $day['reason'],
+                'attendance' => $day['attendance'],
             ],
         ];
+    }
+
+    /** @param  array<string, mixed>  $day */
+    private function sessionTitle(array $day): string
+    {
+        if ($day['status'] === ClassSession::STATUS_CENTER_BREAK) {
+            return 'No class (break)';
+        }
+
+        if ($day['status'] === ClassSession::STATUS_HOLIDAY) {
+            return 'No class — '.($day['reason'] ?: 'public holiday');
+        }
+
+        if ($day['status'] === ClassSession::STATUS_CANCELLED) {
+            return 'Class cancelled';
+        }
+
+        return trim($this->timeLabel($day).' '.$day['class']);
+    }
+
+    /** @param  array<string, mixed>  $day */
+    private function timeLabel(array $day): string
+    {
+        return $day['start_time']
+            ? substr((string) $day['start_time'], 0, 5).'–'.substr((string) $day['end_time'], 0, 5)
+            : '';
     }
 
     private function calendarEvent(CalendarEvent $e): array
@@ -164,6 +164,30 @@ class CalendarController extends Controller
             'borderColor' => $e->color,
             'textColor' => '#ffffff',
             'extendedProps' => ['kind' => 'event', 'description' => $e->description, 'color' => $e->color],
+        ];
+    }
+
+    /**
+     * The last few days the child missed or arrived late, newest first.
+     *
+     * @param  array<string, mixed>  $summary
+     * @return array<string, array<string, mixed>>
+     */
+    private function recentMissed(array $summary): array
+    {
+        return collect($summary['records'] ?? [])
+            ->filter(fn (array $r) => in_array($r['status'], ['absent', 'late'], true))
+            ->sortKeysDesc()
+            ->take(5)
+            ->all();
+    }
+
+    /** @return array<string, mixed> */
+    private function emptySummary(): array
+    {
+        return [
+            'held' => 0, 'present' => 0, 'late' => 0, 'absent' => 0,
+            'unmarked' => 0, 'attended' => 0, 'pct' => null, 'records' => [],
         ];
     }
 }

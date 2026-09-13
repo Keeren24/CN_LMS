@@ -16,12 +16,6 @@
       "slug": "student.homework.index"
     },
     {
-      "url": "/attendance",
-      "name": "My Attendance",
-      "icon": "menu-icon icon-base ti ti-calendar-check",
-      "slug": "student.attendance"
-    },
-    {
       "url": "/calendar",
       "name": "My Calendar",
       "icon": "menu-icon icon-base ti ti-calendar",
