@@ -5,7 +5,7 @@ $pageConfigs = ['myLayout' => 'blank'];
 
 @extends('layouts/layoutMaster')
 
-@section('title', 'Login Basic - Pages')
+@section('title', 'Sign In')
 
 @section('page-style')
 @vite(['resources/assets/vendor/scss/pages/page-auth.scss'])
