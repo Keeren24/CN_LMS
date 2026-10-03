@@ -4,11 +4,11 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Student\HomeworkController;
 use App\Http\Controllers\Student\SubmissionController;
-use App\Http\Controllers\Student\AttendanceController;
 use App\Http\Controllers\Student\ClassPointsController;
 use App\Http\Controllers\Student\DashboardController;
 use App\Http\Controllers\Student\CalendarController;
 use App\Http\Controllers\Student\MarketplaceController;
+use App\Http\Controllers\Student\ProfileController;
 use App\Http\Controllers\Student\IdeController;
 use App\Http\Controllers\language\LanguageController;
 use App\Http\Controllers\dashboard\Analytics;
@@ -186,7 +186,10 @@ Route::middleware(['auth', 'student'])->group(function () {
     Route::get('/submission/{id}', [SubmissionController::class, 'show'])->name('student.homework.submission.view');
 
     // ── Attendance ───────────────────────────────────
-    Route::get('/attendance', [AttendanceController::class, 'index'])->name('student.attendance');
+    // Folded into the calendar page — the calendar and the attendance grid
+    // were the same month twice over. Kept as a redirect so old links/bookmarks
+    // still land somewhere useful.
+    Route::get('/attendance', fn () => redirect()->route('student.calendar'))->name('student.attendance');
 
     // ── Calendar ──────────────────────────────────────
     Route::get('/calendar', [CalendarController::class, 'index'])->name('student.calendar');
@@ -198,6 +201,13 @@ Route::middleware(['auth', 'student'])->group(function () {
     // ── Marketplace ───────────────────────────────────
     Route::get('/marketplace', [MarketplaceController::class, 'index'])->name('student.marketplace');
     Route::post('/marketplace/{item}/redeem', [MarketplaceController::class, 'redeem'])->name('student.marketplace.redeem');
+
+    // ── Profile ───────────────────────────────────────
+    // Named 'profile.*' (not 'student.profile.*') because the navbar's account
+    // dropdown template already links to route('profile.show') when it exists.
+    Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
+    Route::put('/profile/details', [ProfileController::class, 'updateDetails'])->name('profile.details');
+    Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
 
     // ── Code Editor (IDE) ────────────────────────────
     Route::get   ('/ide',                              [IdeController::class, 'index'])       ->name('student.ide.index');

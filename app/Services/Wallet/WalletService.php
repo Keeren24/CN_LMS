@@ -23,14 +23,28 @@ class WalletService
             ->sum('points');
     }
 
-    /** Credit (or, for a tutor correction, debit) the wallet by a points delta. */
+    /**
+     * Credit (or, for a tutor correction, debit) the wallet by a points delta.
+     *
+     * `wallet_balance` is unsigned, so a correction bigger than the balance
+     * used to fail the query outright. A debit now floors at zero: you cannot
+     * take back coins a child has already spent.
+     */
     public function credit(int $studentId, int $delta): void
     {
         if ($delta === 0) {
             return;
         }
 
-        Student::where('id', $studentId)->increment('wallet_balance', $delta);
+        if ($delta > 0) {
+            Student::where('id', $studentId)->increment('wallet_balance', $delta);
+
+            return;
+        }
+
+        Student::where('id', $studentId)->update([
+            'wallet_balance' => DB::raw('GREATEST(CAST(wallet_balance AS SIGNED) - '.abs($delta).', 0)'),
+        ]);
     }
 
     /**
