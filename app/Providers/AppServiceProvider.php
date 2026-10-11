@@ -14,7 +14,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(\Anthropic\Client::class, fn () => new \Anthropic\Client(
+            apiKey: config('services.anthropic.api_key')
+        ));
     }
 
     /**

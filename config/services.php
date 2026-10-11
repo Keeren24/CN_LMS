@@ -42,4 +42,9 @@ return [
         'default_state' => env('HOLIDAY_DEFAULT_STATE', 'Penang'),
     ],
 
+    'anthropic' => [
+        'api_key' => env('ANTHROPIC_API_KEY'),
+        'model' => env('ANTHROPIC_MODEL', 'claude-haiku-5-5'),
+    ],
+
 ];
