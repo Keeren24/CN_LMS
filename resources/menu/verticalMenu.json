@@ -34,6 +34,12 @@
       "slug": "student.marketplace"
     },
     {
+      "url": "/ai-tutor",
+      "name": "AI Tutor",
+      "icon": "menu-icon icon-base ti ti-message-chatbot",
+      "slug": "student.ai-tutor.index"
+    },
+    {
       "url": "/ide",
       "name": "Code Editor",
       "icon": "menu-icon icon-base ti ti-code",

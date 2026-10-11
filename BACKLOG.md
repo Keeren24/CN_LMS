@@ -57,6 +57,30 @@ built:
 
 ---
 
+### Inactive students can still log in and use the portal
+
+**Where:** `App\Http\Controllers\Auth\AuthController::login()` — after
+`Auth::attempt()` it only checks `auth()->user()->student_id`, never the
+student's `status`.
+
+**What's wrong:** A student marked **Inactive** in CN_ADMIN can still sign in and
+use everything (homework, calendar, marketplace, AI Tutor). Checked 2026-10-11:
+25 inactive students all still have a portal login and are still assigned to a
+class; 19 of those are in classes with homework assigned.
+
+**Why it matters:** Access that should have ended hasn't, and each of them can
+spend AI Tutor credit (up to 30 messages/day, roughly $12–54/month worst case
+with ~67 usable students instead of 48 active).
+
+**Suggested fix:** In `login()`, also reject a student whose `student.status` is
+not active (same case-insensitive `LOWER(status) = 'active'` check the
+leaderboard already uses), with a clear message like "This account is inactive —
+please contact your tutor." Also consider ending sessions of students who become
+inactive while logged in (middleware check), and confirm with the centre first
+whether inactive students are _meant_ to keep read access (e.g. to old homework).
+
+---
+
 ## Features
 
 ### 1. Chat system — students can message anyone
@@ -66,13 +90,25 @@ building: who is "anyone" (just other students in the same class? tutors?
 school-wide?), moderation/safety review given the userbase is minors, whether
 it's real-time (websockets/Reverb) or polling, and message retention.
 
-### 2. AI assistant per subject
+### 2. AI assistant per subject — BUILT, waiting on an API key
 
-A per-subject AI helper (e.g. one for the Python course, one for Web Dev)
-that a student can ask questions while working through homework/lessons.
-Open questions: which model/API, how it's scoped to stay on-topic for that
-subject, cost controls, and whether it needs guardrails around just giving
-away homework answers outright.
+Implemented as the **AI Tutor** page (`/ai-tutor`): subject picker → per-subject
+chat, one shared prompt template filled with each course's name/level, history
+in `cn_lms.ai_chat_messages`, daily cap (`AI_TUTOR_DAILY_LIMIT`, default 30) and
+replay window (`AI_TUTOR_HISTORY_TURNS`, default 20). Tested end to end against a
+fake API; **never run against the real Claude API yet**.
+
+To switch it on: fix the `.env`-is-tracked item above first, then set
+`ANTHROPIC_API_KEY` in `.env` and run `php artisan config:clear`.
+
+Default model is `claude-haiku-5-5` (cheapest; ~$1–16/month for 100 students at
+typical use). Its tutoring quality is unverified — when the key arrives, run a
+few real student-style questions through it and `claude-sonnet-5-5` and compare
+before letting students use it. Switching is just `ANTHROPIC_MODEL` in `.env`.
+
+Still open: per-course tuned prompts, a guardrail check beyond the prompt,
+Markdown/code-block rendering in replies (plain text for now), and the widget
+version if students use the page.
 
 ### 3. Sync local files to the cloud LMS
 

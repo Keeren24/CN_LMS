@@ -9,6 +9,7 @@ use App\Http\Controllers\Student\DashboardController;
 use App\Http\Controllers\Student\CalendarController;
 use App\Http\Controllers\Student\MarketplaceController;
 use App\Http\Controllers\Student\ProfileController;
+use App\Http\Controllers\Student\AiTutorController;
 use App\Http\Controllers\Student\IdeController;
 use App\Http\Controllers\language\LanguageController;
 use App\Http\Controllers\dashboard\Analytics;
@@ -208,6 +209,11 @@ Route::middleware(['auth', 'student'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
     Route::put('/profile/details', [ProfileController::class, 'updateDetails'])->name('profile.details');
     Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
+
+    // ── AI Tutor ──────────────────────────────────────
+    Route::get ('/ai-tutor',                  [AiTutorController::class, 'index'])->name('student.ai-tutor.index');
+    Route::get ('/ai-tutor/{course}',         [AiTutorController::class, 'show'])->name('student.ai-tutor.show');
+    Route::post('/ai-tutor/{course}/message', [AiTutorController::class, 'send'])->name('student.ai-tutor.send');
 
     // ── Code Editor (IDE) ────────────────────────────
     Route::get   ('/ide',                              [IdeController::class, 'index'])       ->name('student.ide.index');

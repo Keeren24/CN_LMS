@@ -43,6 +43,8 @@ class Homework extends Model
         return $this->hasMany(HomeworkStudentClass::class);
     }
 
+    // CN_ADMIN unassigns homework by soft-deleting the pivot row, which a
+    // belongsToMany doesn't know about, so skip those rows explicitly.
     public function studentClasses()
     {
         return $this->belongsToMany(
@@ -50,6 +52,6 @@ class Homework extends Model
             'homework_student_class',
             'homework_id',
             'student_class_id'
-        );
+        )->wherePivotNull('deleted_at');
     }
 }
